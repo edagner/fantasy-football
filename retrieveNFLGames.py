@@ -47,9 +47,9 @@ class NFLGameRetriever():
             gameeids = urllib2.urlopen(eidurl).read()
             nflxml = ET.fromstring(gameeids)
             for game in nflxml.iter('g'):
-                print game.get('eid')
                 gameidslist.append(game.get('eid'))
         self.gameEIDS = gameidslist
+        print "List of NewEIDS",self.gameEIDS
 
     def retrieveNFLGameJSON(self):
         """
@@ -57,7 +57,12 @@ class NFLGameRetriever():
         Once constructed, json document is downloaded to GameStats{year}
         directory.
         """
-        for game in self.gameEIDS:
+        #list of games already downloaded
+        gameDir = os.listdir(os.path.join("GameStats{}".format(self.year)))
+        gameDir = [os.path.splitext(gameExt)[0] for gameExt in gameDir]
+        #list comprehension for list of games not downloaded
+        newGame = [game for game in self.gameEIDS if game not in gameDir]
+        for game in newGame:
             jsonURL = ("http://www.nfl.com/liveupdate/game-center"
             + "/{0}/{0}_gtd.json".format(game))
             self.gameDownload(jsonURL, game)
@@ -101,8 +106,8 @@ class NFLGameRetriever():
 if __name__ == '__main__':
     #retrieveEIDS(year)
     nfl = NFLGameRetriever(2016)
-    nfl.retrieveEIDS(1,1)
+    nfl.createGameDirectory()
+    nfl.retrieveEIDS(1,2)
     nfl.retrieveNFLGameJSON()
-    #nfl.gameDownload()
 
     
