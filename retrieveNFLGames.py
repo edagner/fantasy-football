@@ -27,27 +27,25 @@ class NFLGameRetriever():
         self.year = year
         self.gameEIDS = None
 
-    def retrieveEIDS(self, startWeek, endWeek):
+    def retrieveEIDS(self, weeks=[]):
         """
         Retrieve game eids for range of weeks or a given week.
         Parameters
         ===========
-        startWeek - week you begin at
-        endWeek - last week you stop at and is inclusive
+        weeks = list of weeks
         ===========
         """
 
         gameidslist = []
 
-        endRange = endWeek + 1
-        for week in range(startWeek, endRange):
+        for week in weeks:
             eidurl = ("http://www.nfl.com/ajax/scorestrip?season={0}".format(self.year)
             + "&seasonType=REG&week={0}".format(week))
             print eidurl
             gameeids = urllib2.urlopen(eidurl).read()
             nflxml = ET.fromstring(gameeids)
             for game in nflxml.iter('g'):
-                gameidslist.append(game.get('eid'))
+                gameidslist.append(game.get('eid') + "-" +str(week))
         self.gameEIDS = gameidslist
         print "List of NewEIDS",self.gameEIDS
 
@@ -63,8 +61,9 @@ class NFLGameRetriever():
         #list comprehension for list of games not downloaded
         newGame = [game for game in self.gameEIDS if game not in gameDir]
         for game in newGame:
+            gameURL = game.split("-")[0]
             jsonURL = ("http://www.nfl.com/liveupdate/game-center"
-            + "/{0}/{0}_gtd.json".format(game))
+            + "/{0}/{0}_gtd.json".format(gameURL))
             self.gameDownload(jsonURL, game)
 
     def gameDownload(self, url, gameEID):
@@ -83,7 +82,7 @@ class NFLGameRetriever():
             "GameStats{}".format(self.year),"{}.json".format(gameEID))
         if os.path.exists(filename) == False:
             print "{} does not exist".format(filename)
-            with open(filename, 'w') as f: 
+            with open(filename, 'w') as f:
                 f.write(gameurl.read())
         else:
             print "{} already exists".format(filename)
@@ -100,14 +99,9 @@ class NFLGameRetriever():
             os.mkdir("GameStats{}".format(self.year))
             print "GameStats{} created".format(self.year) 
 
-
-
-
 if __name__ == '__main__':
     #retrieveEIDS(year)
     nfl = NFLGameRetriever(2016)
     nfl.createGameDirectory()
-    nfl.retrieveEIDS(1,2)
+    nfl.retrieveEIDS([1,2])
     nfl.retrieveNFLGameJSON()
-
-    
